@@ -40,6 +40,35 @@ Postman ──► controlador ──► servicio ──► repositorio ──►
 | `excepcion`   | Errores del negocio y su conversión a respuestas JSON (404, 400, 401). |
 | `config`      | Cifrado de contraseñas y datos iniciales del menú. |
 
+## Diagramas de arquitectura
+
+Hechos en Visual Paradigm Online. Las imágenes están en [`docs/diagramas`](docs/diagramas).
+
+### 1. Vista de contexto
+El sistema y los actores externos con los datos que intercambian.
+
+![Vista de contexto](docs/diagramas/01-vista-contexto.png)
+
+### 2. Vista funcional
+Diagrama de componentes: qué interfaz ofrece cada módulo y quién la usa.
+
+![Vista funcional](docs/diagramas/02-vista-funcional.png)
+
+### 3. Vista lógica
+Diagrama de clases del dominio con composición, agregación, asociaciones y multiplicidades.
+
+![Vista lógica](docs/diagramas/03-vista-logica.png)
+
+### 4. Vista de desarrollo
+Clases por capa con sus dependencias, herencia (repositorios y excepciones) y la realización de `CalculadoraImpuestos`.
+
+![Vista de desarrollo](docs/diagramas/04-vista-desarrollo.png)
+
+### 5. Vista de despliegue
+Nodos, entornos de ejecución y artefactos, con los protocolos y puertos.
+
+![Vista de despliegue](docs/diagramas/05-vista-despliegue.png)
+
 ## Patrones GRASP aplicados
 
 | Patrón | Dónde | Por qué |
