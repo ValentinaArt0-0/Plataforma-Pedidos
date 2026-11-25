@@ -60,7 +60,11 @@ Diagrama de clases del dominio con composición, agregación, asociaciones y mul
 ![Vista lógica](docs/diagramas/03-vista-logica.png)
 
 ### 4. Vista de desarrollo
-Clases por capa con sus dependencias, herencia (repositorios y excepciones) y la realización de `CalculadoraImpuestos`.
+Todos los paquetes del código (`controlador`, `servicio`, `repositorio`, `dto`, `modelo`, `excepcion`, `config`)
+con sus clases, atributos y métodos; las dependencias «use» entre clases y «import» entre paquetes; la herencia
+(repositorios de `MongoRepository` y excepciones de `RuntimeException`) y las realizaciones
+(`CalculadoraImpuestoPorcentaje` → `CalculadoraImpuestos`, `BCryptPasswordEncoder` → `PasswordEncoder`,
+`DatosIniciales` → `CommandLineRunner`). Las librerías externas aparecen en recuadros punteados.
 
 ![Vista de desarrollo](docs/diagramas/04-vista-desarrollo.png)
 
