@@ -1,0 +1,304 @@
+{
+  "info": {
+    "name": "Plataforma de Pedidos - Restaurante",
+    "description": "Ejecutar las carpetas en orden (1 a 5). Los ids (usuarioId, productoId, itemId, pedidoId) se guardan solos en las variables de la colección.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "correo", "value": "" },
+    { "key": "usuarioId", "value": "" },
+    { "key": "productoId", "value": "" },
+    { "key": "itemId", "value": "" },
+    { "key": "pedidoId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "item": [
+        {
+          "name": "Registrar con correo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('correo', 'cliente' + Date.now() + '@correo.com');"
+              ] }
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                "pm.collectionVariables.set('usuarioId', pm.response.json().id);"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Ana Gómez\",\n  \"correo\": \"{{correo}}\",\n  \"contrasena\": \"secreta123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/registro"
+          }
+        },
+        {
+          "name": "Registrar con teléfono",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Luis Pérez\",\n  \"telefono\": \"3{{$timestamp}}\",\n  \"contrasena\": \"secreta123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/registro"
+          }
+        },
+        {
+          "name": "Iniciar sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                "pm.collectionVariables.set('usuarioId', pm.response.json().id);"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"{{correo}}\",\n  \"contrasena\": \"secreta123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Catálogo de productos",
+      "item": [
+        {
+          "name": "Listar menú",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                "const hamburguesa = pm.response.json().find(p => p.nombre === 'Hamburguesa Clásica');",
+                "pm.collectionVariables.set('productoId', (hamburguesa || pm.response.json()[0]).id);"
+              ] }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/productos" }
+        },
+        {
+          "name": "Filtrar por categoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/productos?categoria=Pizzas", "host": ["{{baseUrl}}"], "path": ["productos"], "query": [{ "key": "categoria", "value": "Pizzas" }] }
+          }
+        },
+        {
+          "name": "Ver un producto",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/productos/{{productoId}}" }
+        },
+        {
+          "name": "Crear producto (administración)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Perro Caliente\",\n  \"descripcion\": \"Salchicha americana con papa ripio\",\n  \"categoria\": \"Perros\",\n  \"precio\": 15000,\n  \"ingredientesBase\": [\"Salchicha\", \"Pan\", \"Papa ripio\", \"Salsas\"],\n  \"complementos\": [\n    { \"nombre\": \"Queso gratinado\", \"precio\": 3000 }\n  ]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/productos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Carrito",
+      "item": [
+        {
+          "name": "Agregar producto personalizado",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                "const items = pm.response.json().items;",
+                "pm.collectionVariables.set('itemId', items[items.length - 1].id);"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 2,\n  \"ingredientes\": [\"Carne\", \"Lechuga\", \"Salsa de la casa\"],\n  \"complementos\": [\"Queso extra\", \"Tocineta\"],\n  \"notas\": \"Sin cebolla y bien asada\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/carritos/{{usuarioId}}/items"
+          }
+        },
+        {
+          "name": "Ver carrito",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/carritos/{{usuarioId}}" }
+        },
+        {
+          "name": "Cambiar cantidad (+ / –)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"cantidad\": 3\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/carritos/{{usuarioId}}/items/{{itemId}}"
+          }
+        },
+        {
+          "name": "Eliminar producto del carrito",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/carritos/{{usuarioId}}/items/{{itemId}}" }
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/carritos/{{usuarioId}}" }
+        },
+        {
+          "name": "Volver a agregar (para el pedido)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 1,\n  \"complementos\": [\"Queso extra\"]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/carritos/{{usuarioId}}/items"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Pedido",
+      "item": [
+        {
+          "name": "Confirmar pedido (domicilio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                "pm.collectionVariables.set('pedidoId', pm.response.json().id);"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\",\n  \"metodoPago\": \"TARJETA\",\n  \"tipoEntrega\": \"DOMICILIO\",\n  \"direccionEntrega\": \"Calle 10 # 20-30, Apto 401\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/pedidos"
+          }
+        },
+        {
+          "name": "Ver pedido",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/pedidos/{{pedidoId}}" }
+        },
+        {
+          "name": "Mis pedidos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/pedidos/usuario/{{usuarioId}}" }
+        },
+        {
+          "name": "Activar notificaciones",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"activar\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/pedidos/{{pedidoId}}/notificaciones"
+          }
+        },
+        {
+          "name": "Avanzar estado (cocina / despacho)",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/pedidos/{{pedidoId}}/avanzar-estado" }
+        },
+        {
+          "name": "Línea de tiempo",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/pedidos/{{pedidoId}}/linea-tiempo" }
+        }
+      ]
+    },
+    {
+      "name": "5. Casos de error",
+      "item": [
+        {
+          "name": "Login con contraseña incorrecta (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"{{correo}}\",\n  \"contrasena\": \"incorrecta\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Confirmar con carrito vacío (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\",\n  \"metodoPago\": \"PAGO_MOVIL\",\n  \"tipoEntrega\": \"RECOGER_EN_LOCAL\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/pedidos"
+          }
+        },
+        {
+          "name": "Complemento que no existe (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 1,\n  \"complementos\": [\"Piña\"]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/carritos/{{usuarioId}}/items"
+          }
+        },
+        {
+          "name": "Datos inválidos en el registro (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+              ] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"\",\n  \"correo\": \"no-es-correo\",\n  \"contrasena\": \"123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/registro"
+          }
+        }
+      ]
+    }
+  ]
+}
